@@ -10,14 +10,9 @@ namespace SCTClientelog
         {
             try
             {
-                // Crear la carpeta diaria y archivo de log
-                string folderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, DateTime.Now.ToString("yyyyMMdd"));
-                if (!Directory.Exists(folderPath))
-                {
-                    Directory.CreateDirectory(folderPath);
-                }
-
-                string logFilePath = Path.Combine(folderPath, "log.txt");
+                // Crear archivo de log del aplicativo con formato Resultado-fechadehoy.log
+                string logFileName = $"Resultado-{DateTime.Now:yyyyMMdd}.log";
+                string logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, logFileName);
 
                 bool isFirstRun = IsFirstExecutionToday();
                 using (StreamWriter sw = new StreamWriter(logFilePath, true))
@@ -88,13 +83,22 @@ namespace SCTClientelog
 
         static bool IsFirstExecutionToday()
         {
-            string folderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, DateTime.Now.ToString("yyyyMMdd"));
-            string checkFilePath = Path.Combine(folderPath, "first_run_check.txt");
+            string firstRunCheckFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "first_run_check.txt");
 
-            if (File.Exists(checkFilePath))
-                return false;
+            if (File.Exists(firstRunCheckFilePath))
+            {
+                var fileDate = File.GetLastWriteTime(firstRunCheckFilePath);
+                if (fileDate.Date == DateTime.Now.Date)
+                {
+                    return false;
+                }
+                else
+                {
+                    File.Delete(firstRunCheckFilePath);
+                }
+            }
 
-            using (StreamWriter sw = new StreamWriter(checkFilePath))
+            using (StreamWriter sw = new StreamWriter(firstRunCheckFilePath))
             {
                 sw.WriteLine($"{DateTime.Now}: First run today.");
             }
