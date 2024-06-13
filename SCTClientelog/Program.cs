@@ -10,13 +10,8 @@ namespace SCTClientelog
         {
             try
             {
-                string folderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, DateTime.Now.ToString("yyyyMMdd"));
-                if (!Directory.Exists(folderPath))
-                {
-                    Directory.CreateDirectory(folderPath);
-                }
-
-                string logFilePath = Path.Combine(folderPath, "Resultado.log");
+                string logFileName = $"Resultado-{DateTime.Now:yyyyMMdd}.log";
+                string logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, logFileName);
 
                 bool isFirstRun = IsFirstExecutionToday();
                 using (StreamWriter sw = new StreamWriter(logFilePath, true))
@@ -56,6 +51,11 @@ namespace SCTClientelog
                         File.Move(sourceFilePath, destinationFilePath);
                     }
                 }
+
+                // Eliminar archivos antiguos en el directorio del aplicativo
+                DeleteOldLogs(AppDomain.CurrentDomain.BaseDirectory, 30);
+                // Eliminar archivos antiguos en C:\SCTCliente
+                DeleteOldLogs(sourceFolder, 30);
             }
             catch (Exception ex)
             {
@@ -82,11 +82,20 @@ namespace SCTClientelog
 
         static bool IsFirstExecutionToday()
         {
-            string folderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, DateTime.Now.ToString("yyyyMMdd"));
-            string checkFilePath = Path.Combine(folderPath, "first_run_check.txt");
+            string checkFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "first_run_check.txt");
 
             if (File.Exists(checkFilePath))
-                return false;
+            {
+                var fileDate = File.GetLastWriteTime(checkFilePath);
+                if (fileDate.Date == DateTime.Now.Date)
+                {
+                    return false;
+                }
+                else
+                {
+                    File.Delete(checkFilePath);
+                }
+            }
 
             using (StreamWriter sw = new StreamWriter(checkFilePath))
             {
@@ -94,6 +103,28 @@ namespace SCTClientelog
             }
 
             return true;
+        }
+
+        static void DeleteOldLogs(string folderPath, int daysOld)
+        {
+            try
+            {
+                var directoryInfo = new DirectoryInfo(folderPath);
+                var oldFiles = directoryInfo.GetFiles().Where(f => f.LastWriteTime < DateTime.Now.AddDays(-daysOld)).ToList();
+
+                foreach (var file in oldFiles)
+                {
+                    file.Delete();
+                }
+            }
+            catch (Exception ex)
+            {
+                string errorFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "error_log.txt");
+                using (StreamWriter sw = new StreamWriter(errorFilePath, true))
+                {
+                    sw.WriteLine($"{DateTime.Now}: Error al eliminar archivos antiguos - {ex.Message}");
+                }
+            }
         }
     }
 }
