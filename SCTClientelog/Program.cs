@@ -16,7 +16,7 @@ namespace SCTClientelog
                     Directory.CreateDirectory(folderPath);
                 }
 
-                string logFilePath = Path.Combine(folderPath, "Resultado.log");
+                string logFilePath = Path.Combine(folderPath, "Resultados.log");
 
                 bool isFirstRun = IsFirstExecutionToday();
                 using (StreamWriter sw = new StreamWriter(logFilePath, true))
@@ -56,6 +56,10 @@ namespace SCTClientelog
                         File.Move(sourceFilePath, destinationFilePath);
                     }
                 }
+
+                // Eliminar archivos antiguos
+                DeleteOldLogs(AppDomain.CurrentDomain.BaseDirectory, 30);
+                DeleteOldLogs(sourceFolder, 30);
             }
             catch (Exception ex)
             {
@@ -94,6 +98,34 @@ namespace SCTClientelog
             }
 
             return true;
+        }
+
+        static void DeleteOldLogs(string folderPath, int daysOld)
+        {
+            try
+            {
+                var directoryInfo = new DirectoryInfo(folderPath);
+                var files = directoryInfo.GetFiles().Where(f => f.LastWriteTime < DateTime.Now.AddDays(-daysOld));
+
+                foreach (var file in files)
+                {
+                    file.Delete();
+                }
+
+                var directories = directoryInfo.GetDirectories().Where(d => d.LastWriteTime < DateTime.Now.AddDays(-daysOld));
+                foreach (var directory in directories)
+                {
+                    directory.Delete(true);
+                }
+            }
+            catch (Exception ex)
+            {
+                string errorFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "error_log.txt");
+                using (StreamWriter sw = new StreamWriter(errorFilePath, true))
+                {
+                    sw.WriteLine($"{DateTime.Now}: Error al eliminar archivos antiguos - {ex.Message}");
+                }
+            }
         }
     }
 }
