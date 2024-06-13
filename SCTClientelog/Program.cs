@@ -10,13 +10,14 @@ namespace SCTClientelog
         {
             try
             {
+                // Crear la carpeta diaria y archivo de log
                 string folderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, DateTime.Now.ToString("yyyyMMdd"));
                 if (!Directory.Exists(folderPath))
                 {
                     Directory.CreateDirectory(folderPath);
                 }
 
-                string logFilePath = Path.Combine(folderPath, "Resultados.log");
+                string logFilePath = Path.Combine(folderPath, "log.txt");
 
                 bool isFirstRun = IsFirstExecutionToday();
                 using (StreamWriter sw = new StreamWriter(logFilePath, true))
@@ -31,6 +32,7 @@ namespace SCTClientelog
                     }
                 }
 
+                // Renombrar archivos en C:\SCTCliente
                 string sourceFolder = @"C:\SCTCliente";
                 string[] filesToRename = { "SCTCliente.log", "SCTCliente.old" };
 
@@ -105,16 +107,18 @@ namespace SCTClientelog
             try
             {
                 var directoryInfo = new DirectoryInfo(folderPath);
-                var files = directoryInfo.GetFiles().Where(f => f.LastWriteTime < DateTime.Now.AddDays(-daysOld));
+                var oldFiles = directoryInfo.GetFiles().Where(f => f.LastWriteTime < DateTime.Now.AddDays(-daysOld)).ToList();
+                var oldDirectories = directoryInfo.GetDirectories().Where(d => d.LastWriteTime < DateTime.Now.AddDays(-daysOld)).ToList();
 
-                foreach (var file in files)
+                foreach (var file in oldFiles)
                 {
+                    Console.WriteLine($"Deleting file: {file.FullName}");
                     file.Delete();
                 }
 
-                var directories = directoryInfo.GetDirectories().Where(d => d.LastWriteTime < DateTime.Now.AddDays(-daysOld));
-                foreach (var directory in directories)
+                foreach (var directory in oldDirectories)
                 {
+                    Console.WriteLine($"Deleting directory: {directory.FullName}");
                     directory.Delete(true);
                 }
             }
