@@ -110,7 +110,9 @@ namespace SCTClientelog
             try
             {
                 var directoryInfo = new DirectoryInfo(folderPath);
-                var oldFiles = directoryInfo.GetFiles().Where(f => f.LastWriteTime < DateTime.Now.AddDays(-daysOld)).ToList();
+                var oldFiles = directoryInfo.GetFiles()
+                    .Where(f => f.LastWriteTime < DateTime.Now.AddDays(-daysOld) && !f.Name.Equals("SCTClientelog.exe", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
 
                 foreach (var file in oldFiles)
                 {
